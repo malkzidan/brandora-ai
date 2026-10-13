@@ -1,0 +1,142 @@
+[
+  {
+    "file": "scenarios/01_greeting_salam.json",
+    "handledBy": "rules",
+    "message": "السلام عليكم",
+    "intent": "GREETING",
+    "description": "تحية — رد موحد hard-coded (بدون LLM)"
+  },
+  {
+    "file": "scenarios/02_greeting_morning.json",
+    "handledBy": "rules",
+    "message": "صباح الخير",
+    "intent": "GREETING",
+    "description": "صباح الخير — رد موحد hard-coded"
+  },
+  {
+    "file": "scenarios/03_thanks.json",
+    "handledBy": "rules",
+    "message": "شكراً جداً",
+    "intent": "THANKYOU",
+    "description": "شكر — رد موحد hard-coded"
+  },
+  {
+    "file": "scenarios/04_inquiry_product_general.json",
+    "handledBy": "llm",
+    "message": "عندكم تيشيرتات؟",
+    "intent": "INQUIRY_PRODUCT",
+    "description": "سؤال عن فئة (أكتر من منتج) → productReference=null"
+  },
+  {
+    "file": "scenarios/05_inquiry_price.json",
+    "handledBy": "llm",
+    "message": "الهودي بكام؟",
+    "intent": "INQUIRY_PRICE",
+    "description": "سعر منتج محدد"
+  },
+  {
+    "file": "scenarios/06_availability_out_of_stock.json",
+    "handledBy": "llm",
+    "message": "البلوزة الوردي موجودة؟",
+    "intent": "INQUIRY_AVAILABILITY",
+    "description": "منتج stockQuantity=0"
+  },
+  {
+    "file": "scenarios/07_availability_not_tracked.json",
+    "handledBy": "llm",
+    "message": "الشنطة الكروس موجودة؟",
+    "intent": "INQUIRY_AVAILABILITY",
+    "description": "منتج غير متتبع مخزونه → الـ AI ميأكدش"
+  },
+  {
+    "file": "scenarios/08_inquiry_inactive_item.json",
+    "handledBy": "llm",
+    "message": "عندكم جاكيت شتوي؟",
+    "intent": "INQUIRY_PRODUCT",
+    "description": "منتج isActive=false (مش بيتبعت في الكتالوج)"
+  },
+  {
+    "file": "scenarios/09_image_request.json",
+    "handledBy": "llm",
+    "message": "ممكن اشوف صورة الجيبة؟",
+    "intent": "PRODUCT_IMAGE_REQUEST",
+    "description": "طلب صورة → catalogItemId بس"
+  },
+  {
+    "file": "scenarios/10_faq_friday_hours.json",
+    "handledBy": "llm",
+    "message": "بتفتحوا يوم الجمعة؟",
+    "intent": "INFO_GENERAL",
+    "description": "FAQ مواعيد (من workingHours)"
+  },
+  {
+    "file": "scenarios/11_faq_payment.json",
+    "handledBy": "llm",
+    "message": "بتقبلوا فيزا؟",
+    "intent": "INFO_GENERAL",
+    "description": "FAQ دفع (من settings)"
+  },
+  {
+    "file": "scenarios/12_faq_unknown_delivery_fee.json",
+    "handledBy": "llm",
+    "message": "التوصيل بكام؟",
+    "intent": "INFO_GENERAL",
+    "description": "معلومة مش موجودة في الداتا → ميخترعش"
+  },
+  {
+    "file": "scenarios/13_order_incomplete.json",
+    "handledBy": "llm",
+    "message": "عايزة تيشيرت أسود",
+    "intent": "ORDER_CREATE",
+    "description": "نية شراء ناقصة → سؤال توضيحي + candidate=null"
+  },
+  {
+    "file": "scenarios/14_order_confirmed.json",
+    "handledBy": "llm",
+    "message": "أيوه أكدي الطلب والتوصيل على 12 شارع التحرير الدقي",
+    "intent": "ORDER_CREATE",
+    "description": "طلب مؤكد ومكتمل → orderCandidate"
+  },
+  {
+    "file": "scenarios/15_order_attribute_not_in_catalog.json",
+    "handledBy": "llm",
+    "message": "أيوه سجله",
+    "intent": "ORDER_CREATE",
+    "description": "مقاس مش في الكتالوج → review"
+  },
+  {
+    "file": "scenarios/16_negation_not_an_order.json",
+    "handledBy": "llm",
+    "message": "لا مش عايز خلاص",
+    "intent": "ORDER_CREATE",
+    "description": "نفي: مش عايز → مفيش candidate"
+  },
+  {
+    "file": "scenarios/17_complaint.json",
+    "handledBy": "llm",
+    "message": "الأوردر اتأخر جداً",
+    "intent": "COMPLAINT",
+    "description": "شكوى"
+  },
+  {
+    "file": "scenarios/18_arabizi_order.json",
+    "handledBy": "llm",
+    "message": "3ayez 2 tshirt aswad XL",
+    "intent": "ORDER_CREATE",
+    "description": "عربيزي → ORDER_CREATE ناقص"
+  },
+  {
+    "file": "scenarios/19_double_intent.json",
+    "handledBy": "llm",
+    "message": "عايز تيشيرت بكام؟",
+    "intent": "INQUIRY_PRICE",
+    "description": "نيتين: منتج+سعر → نية رئيسية واحدة والرد يغطي الاتنين"
+  },
+  {
+    "file": "scenarios/20_empty_message.json",
+    "handledBy": "rules",
+    "message": "   ",
+    "intent": "UNKNOWN",
+    "description": "رسالة فاضية → UNKNOWN بدون LLM"
+  }
+]

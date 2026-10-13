@@ -1,0 +1,76 @@
+{
+  "workingHours": [
+    {
+      "dayOfWeek": "SATURDAY",
+      "isOpen": true,
+      "opensAt": "10:00",
+      "closesAt": "22:00"
+    },
+    {
+      "dayOfWeek": "SUNDAY",
+      "isOpen": true,
+      "opensAt": "10:00",
+      "closesAt": "22:00"
+    },
+    {
+      "dayOfWeek": "MONDAY",
+      "isOpen": true,
+      "opensAt": "10:00",
+      "closesAt": "22:00"
+    },
+    {
+      "dayOfWeek": "TUESDAY",
+      "isOpen": true,
+      "opensAt": "10:00",
+      "closesAt": "22:00"
+    },
+    {
+      "dayOfWeek": "WEDNESDAY",
+      "isOpen": true,
+      "opensAt": "10:00",
+      "closesAt": "22:00"
+    },
+    {
+      "dayOfWeek": "THURSDAY",
+      "isOpen": true,
+      "opensAt": "10:00",
+      "closesAt": "22:00"
+    },
+    {
+      "dayOfWeek": "FRIDAY",
+      "isOpen": true,
+      "opensAt": "14:00",
+      "closesAt": "22:00"
+    }
+  ],
+  "settings": {
+    "acceptsCash": true,
+    "acceptsOnlinePayment": false,
+    "deliveryEnabled": true,
+    "pickupEnabled": true
+  },
+  "policies": [
+    {
+      "id": "pol-1",
+      "type": "RETURN",
+      "title": "الاستبدال والاسترجاع",
+      "content": "الاستبدال خلال 14 يوم من الاستلام بشرط المنتج بحالته الأصلية ومعاه الفاتورة.",
+      "isActive": true
+    },
+    {
+      "id": "pol-2",
+      "type": "DELIVERY",
+      "title": "التوصيل",
+      "content": "التوصيل متاح داخل القاهرة والجيزة خلال 2 إلى 4 أيام عمل.",
+      "isActive": true
+    }
+  ],
+  "faqs": [
+    {
+      "id": "faq-1",
+      "question": "فيه فرع تاني؟",
+      "answer": "لا، عندنا فرع واحد بس في الدقي.",
+      "isActive": true
+    }
+  ]
+}
