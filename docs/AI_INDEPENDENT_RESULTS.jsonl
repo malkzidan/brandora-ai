@@ -1,0 +1,36 @@
+{"scenario": "comparison", "message": "عندكم تيشيرت أسود؟", "tools": ["get_products", "get_product_details"], "syntheticGroq": true}
+{"scenario": "comparison", "message": "طب مقاس L بكام؟", "tools": ["get_conversation_history", "get_products", "get_product_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "comparison", "message": "عايزة اتنين منه", "tools": ["get_conversation_history", "get_products", "get_product_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "comparison", "message": "طب غيرت رأيي عايزة الأبيض", "tools": ["get_conversation_history", "get_products", "get_product_details", "get_variant_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "comparison", "message": "أنا محتارة بين الأسود والأبيض مقاس L أنهي أرخص؟", "tools": ["get_conversation_history", "get_products", "get_product_details", "get_variant_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "comparison", "passed": true, "reply": {"intent": "INQUIRY", "reply": "الأسود مقاس L بـ275 جنيه، والأبيض بنفس المقاس بـ285 جنيه، والأسود مقاس L أرخص بـ10 جنيه", "requiresReview": false, "orderCandidate": null}}
+{"scenario": "size_change", "message": "عندكم تيشيرت أبيض مقاس L؟", "tools": ["get_products", "get_product_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "size_change", "message": "طب مقاس M بكام؟", "tools": ["get_conversation_history", "get_products", "get_product_details", "get_variant_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "size_change", "passed": true, "reply": {"intent": "INQUIRY", "reply": "تمام، الأبيض مقاس M بـ225 جنيه", "requiresReview": false, "orderCandidate": null}}
+{"scenario": "price_followup", "message": "عندكم تيشيرت أسود؟", "tools": ["get_products", "get_product_details"], "syntheticGroq": true}
+{"scenario": "price_followup", "message": "طب مقاس L بكام؟", "tools": ["get_conversation_history", "get_products", "get_product_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "price_followup", "passed": true, "reply": {"intent": "INQUIRY", "reply": "تمام، الأسود مقاس L بـ275 جنيه", "requiresReview": false, "orderCandidate": null}}
+{"scenario": "franco", "message": "3andkom tshirt eswed", "tools": ["get_products", "get_product_details"], "syntheticGroq": true}
+{"scenario": "franco", "message": "bekam size L", "tools": ["get_conversation_history", "get_products", "get_product_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "franco", "passed": true, "reply": {"intent": "INQUIRY", "reply": "tamam, el eswed ma2as L b 275 geneh", "requiresReview": false, "orderCandidate": null}}
+{"scenario": "quantity", "message": "عايزة 10 تيشيرت أسود مقاس L", "tools": ["get_products", "get_product_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "quantity", "passed": true, "reply": {"intent": "PURCHASE_INTENT", "reply": "تمام، بالنسبة للـ10 قطع من الأسود مقاس L بـ275 جنيه للقطعة، والكمية دي مش متاحة بالكامل حاليًا. نراجع إمكانية توفير الكمية مع المسؤول؟", "requiresReview": true, "orderCandidate": null}}
+{"scenario": "selection_correction", "message": "عندكم تيشيرت أسود؟", "tools": ["get_products", "get_product_details"], "syntheticGroq": true}
+{"scenario": "selection_correction", "message": "طب مقاس L بكام؟", "tools": ["get_conversation_history", "get_products", "get_product_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "selection_correction", "message": "طب عايزة 10 قطع من مقاس L", "tools": ["get_conversation_history", "get_products", "get_product_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "selection_correction", "message": "طب خلاص، خليهم 3 قطع من الأبيض مقاس L بدل الأسود", "tools": ["get_conversation_history", "get_products", "get_product_details", "get_variant_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "selection_correction", "passed": true, "reply": {"intent": "PURCHASE_INTENT", "reply": "تمام، بالنسبة للـ3 قطع من الأبيض مقاس L بـ285 جنيه للقطعة، والتوافر النهائي محتاج تأكيد", "requiresReview": false, "orderCandidate": null}}
+{"scenario": "named_comparison", "message": "قصدي التيشيرت القطن الأسود والأبيض مقاس L أنهي أرخص؟", "tools": ["get_products", "get_product_details"], "syntheticGroq": true}
+{"scenario": "named_comparison", "passed": true, "reply": {"intent": "INQUIRY", "reply": "الأسود مقاس L بـ275 جنيه، والأبيض بنفس المقاس بـ285 جنيه، والأسود مقاس L أرخص بـ10 جنيه", "requiresReview": false, "orderCandidate": null}}
+{"scenario": "stock_zero", "message": "عندكم تيشيرت أزرق مقاس M؟", "tools": ["get_products", "get_product_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "stock_zero", "passed": true, "reply": {"intent": "INQUIRY", "reply": "تمام، الأزرق مقاس M بـ0 جنيه، مش متاح حاليًا حسب آخر معلومات عندنا", "requiresReview": false, "orderCandidate": null}}
+{"scenario": "untracked", "message": "عندكم تيشيرت أبيض مقاس M؟", "tools": ["get_products", "get_product_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "untracked", "passed": true, "reply": {"intent": "INQUIRY", "reply": "تمام، الأبيض مقاس M بـ225 جنيه، والتوافر محتاج تأكيد", "requiresReview": false, "orderCandidate": null}}
+{"scenario": "missing_price", "message": "عندكم كاب بكام؟", "tools": ["get_products", "get_product_details"], "syntheticGroq": true}
+{"scenario": "missing_price", "passed": true, "reply": {"intent": "INQUIRY", "reply": "تمام، سعر كاب Cap مش مؤكد", "requiresReview": false, "orderCandidate": null}}
+{"scenario": "cancel", "message": "عايزة اتنين تيشيرت أسود مقاس L", "tools": ["get_products", "get_product_details", "get_variant_details"], "syntheticGroq": true}
+{"scenario": "cancel", "message": "خلاص مش عايزة", "tools": ["get_products"], "syntheticGroq": true}
+{"scenario": "cancel", "passed": true, "reply": {"intent": "OTHER", "reply": "تمام، نسيب الاختيار ده. تحب تشوف حاجة تانية؟", "requiresReview": false, "orderCandidate": null}}
+{"scenario": "greeting", "message": "أهلا", "tools": [], "syntheticGroq": true}
+{"scenario": "greeting", "passed": true, "reply": {"intent": "OTHER", "reply": "أهلاً بيك! أقدر أساعدك إزاي؟", "requiresReview": false, "orderCandidate": null}}
+{"offline": true, "scenarios": 12, "turns": 23, "failed": [], "liveBackendTested": false, "endpoint": "/v2/ai/respond"}

@@ -79,9 +79,10 @@ def build(wa: str, text: str, mutate: Callable[[dict], None] | None = None) -> d
 
 def run_payload(orch: Orchestrator, payload: dict) -> R:
     request = AIRespondRequest.model_validate(copy.deepcopy(payload))
-    response, trace = asyncio.run(orch.respond(request))
+    execution = asyncio.run(orch.respond(request))
+    response, trace = execution.response, execution.trace
     VALIDATOR.validate(response.model_dump(mode="json"))   # EVERY response must satisfy the official E0-3 schema
-    return R(response, orch.last_plan, trace, payload)
+    return R(response, execution.plan, trace, payload)
 
 
 def run(orch: Orchestrator, wa: str, text: str, mutate: Callable[[dict], None] | None = None) -> R:

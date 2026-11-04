@@ -24,9 +24,10 @@ def pipeline(script, **kw):
 
 def go(orch, payload):
     request = AIRespondRequest.model_validate(copy.deepcopy(payload))
-    response, trace = asyncio.run(orch.respond(request))
+    execution = asyncio.run(orch.respond(request))
+    response, trace = execution.response, execution.trace
     VALIDATOR.validate(response.model_dump(mode="json"))
-    return response, trace, orch.last_plan
+    return response, trace, execution.plan
 
 
 DRAFT_PRICE = "T-Shirt بـ 299.99 جنيه."

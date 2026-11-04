@@ -25,6 +25,7 @@ from ..prompts.generator import GENERATOR_SYSTEM_PROMPT, build_generator_prompt
 from ..prompts.router import ROUTER_SYSTEM_PROMPT, build_router_prompt
 from ..schemas import Intent, Plan, RouterResult
 from .base import ProviderUnavailable
+from .structured import StructuredOutputError, classify_failure, wire_json_schema
 
 logger = logging.getLogger("brandora.gemini")
 T = TypeVar("T")
@@ -80,13 +81,24 @@ class GeminiClient:
         from google.genai import types
 
         kwargs: dict[str, Any] = {}
-        if schema is not None and self._use_schema:
+        if schema is not None and getattr(schema, "__gemini_json_schema__", False):
+            kwargs["response_json_schema"] = wire_json_schema(schema)
+        elif schema is not None and self._use_schema:
             kwargs["response_schema"] = schema
         config = types.GenerateContentConfig(system_instruction=system, temperature=temperature,
                                              response_mime_type=mime, **kwargs)
         response = await asyncio.wait_for(
             self._get_client().aio.models.generate_content(model=model, contents=user, config=config),
             timeout=self.settings.gemini_timeout_seconds)
+        feedback = getattr(response, "prompt_feedback", None)
+        if getattr(feedback, "block_reason", None):
+            raise StructuredOutputError("output_blocked")
+        for candidate in (getattr(response, "candidates", None) or [])[:1]:
+            reason = getattr(candidate, "finish_reason", None)
+            if reason in {"SAFETY", "BLOCKLIST", "PROHIBITED_CONTENT", "RECITATION"}:
+                raise StructuredOutputError("output_blocked")
+            if reason == "MAX_TOKENS":
+                raise StructuredOutputError("output_truncated")
         return response.text
 
     # ------------------------------------------------------------------ retry / fallback policy
@@ -96,6 +108,7 @@ class GeminiClient:
                    temperature: float = 0.0, mime: str = "application/json") -> tuple[T, str]:
         deadline = self._clock() + self.settings.gemini_total_timeout_seconds
         last_reason = "no models available"
+        diagnostics = []  # call-local; never a shared last-request field
         
         for idx, model in enumerate(models):
             health = self.health.setdefault(model, ModelHealth())
@@ -108,26 +121,35 @@ class GeminiClient:
             while attempt < max(1, self.settings.gemini_max_retries):
                 attempt += 1
                 if self._clock() >= deadline:
-                    raise ProviderUnavailable(f"{stage}: total timeout reached")
+                    raise ProviderUnavailable(f"{stage}: total timeout reached", diagnostics=diagnostics)
                 logger.info("%s: trying model=%s attempt=%d", stage, model, attempt)
+                operation = "sdk"
                 try:
                     text = await self._generate(model, system, user, schema=schema, temperature=temperature, mime=mime)
+                    operation = "parse"
                     value = parse(text)
-                except ValueError as exc:  # includes pydantic.ValidationError and JSONDecodeError
-                    self._fail(model, f"bad output: {_error_text(exc)}")
-                    last_reason = f"{model}: invalid output"
-                    continue  # retry the same model immediately
+                    if value is None:
+                        raise StructuredOutputError("incompatible_output")
                 except Exception as exc:  # noqa: BLE001 - every SDK/network error is classified below
+                    diagnostic = classify_failure(exc, operation)
+                    diagnostics.append(diagnostic)
+                    logger.warning("%s: failure category=%s operation=%s http_status=%s attempt=%d",
+                                   stage, diagnostic.category, operation, diagnostic.http_status, attempt)
+                    if operation == "parse":
+                        self._fail(model, diagnostic.category)
+                        last_reason = f"{model}: {diagnostic.category}"
+                        continue
                     code, msg = _error_code(exc), _error_text(exc)
-                    if code in FATAL_AUTH_CODES or (code == 400 and "api key" in msg.lower()):
+                    if diagnostic.category in {"authentication", "permission_denied"}:
                         self._fail(model, f"auth error {code}")
-                        raise ProviderUnavailable(f"authentication failed ({code}); check GEMINI_API_KEY") from exc
+                        raise ProviderUnavailable(f"authentication failed ({code}); check GEMINI_API_KEY", diagnostics=diagnostics) from None
                     if code == 404:
                         health.state, health.last_error = "disabled", "404 model not found"
                         logger.warning("%s: model=%s not found for this key; disabled", stage, model)
                         last_reason = f"{model}: not found"
                         break
-                    if code == 400 and "schema" in msg.lower() and self._use_schema and schema is not None:
+                    if (code == 400 and "schema" in msg.lower() and self._use_schema and schema is not None
+                            and not getattr(schema, "__gemini_json_schema__", False)):
                         logger.warning("schema rejected by model=%s; retrying in plain JSON mode", model)
                         self._use_schema = False
                         attempt -= 1
@@ -139,8 +161,12 @@ class GeminiClient:
                         logger.warning("%s: model=%s returned %s; trying next model", stage, model, code)
                         last_reason = f"{model}: {code}"
                         break
-                    self._fail(model, f"{type(exc).__name__}: {msg}")  # timeout / network / unknown
-                    last_reason = f"{model}: {type(exc).__name__}"
+                    self._fail(model, diagnostic.category)
+                    last_reason = f"{model}: {diagnostic.category}"
+                    if diagnostic.category in {"sdk_schema_error", "sdk_configuration_error", "output_blocked", "output_truncated"}:
+                        raise ProviderUnavailable(last_reason, diagnostics=diagnostics) from None
+                    if code is not None and 400 <= code < 500:
+                        break  # deterministic request errors do not benefit from delayed retries
                     if attempt < self.settings.gemini_max_retries:
                         await self._sleep(self.settings.gemini_retry_delay_seconds)
                     continue
@@ -154,7 +180,7 @@ class GeminiClient:
             if idx < len(models) - 1:
                 logger.warning("%s: model=%s failed (%s). Falling back to next model...", stage, model, last_reason)
                 
-        raise ProviderUnavailable(f"{stage}: {last_reason}")
+        raise ProviderUnavailable(f"{stage}: {last_reason}", diagnostics=diagnostics)
 
     def _fail(self, model: str, error: str, keep_state: bool = False) -> None:
         h = self.health.setdefault(model, ModelHealth())

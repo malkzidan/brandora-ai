@@ -14,7 +14,6 @@ from __future__ import annotations
 import logging
 import math
 import time
-from dataclasses import dataclass, field
 
 from pydantic import ValidationError
 
@@ -24,6 +23,7 @@ from ..prompts.templates import t
 from ..providers import Providers, ProviderUnavailable
 from ..schemas import AiResponse, AIRespondRequest, Confirmation, Intent, Plan, RouterResult
 from .context import Ctx, build_context
+from .execution import ExecutionResult, Trace
 from .guard import check_reply
 from .planner import Planner
 
@@ -36,19 +36,6 @@ MAX_BUDGET = 10_000_000
 
 class AIUnavailable(Exception):
     """The Router failed on every model and rule fallback is disabled (HTTP 503)."""
-
-
-@dataclass
-class Trace:
-    router_source: str = "rules"            # hard-rule | gemini | rules
-    router_model: str | None = None
-    generator_model: str | None = None
-    fallback_reason: str | None = None
-    detailed_intent: str = ""
-    guard_violations: list[str] = field(default_factory=list)
-    dropped_inactive: int = 0
-    llm_calls: int = 0
-    latency_ms: int = 0
 
 
 def enforce_router_rules(rr: RouterResult, ctx: Ctx) -> RouterResult:
@@ -81,8 +68,12 @@ class Orchestrator:
 
     # ------------------------------------------------------------------ public
 
-    async def respond(self, request: AIRespondRequest) -> tuple[AiResponse, Trace]:
+    async def respond(self, request: AIRespondRequest) -> ExecutionResult:
+        """Execute one request and return its state without storing it on self."""
         started = time.perf_counter()
+        # Detach nested catalog, knowledge, and business models from caller-owned
+        # objects, even when a caller reuses the same validated request instance.
+        request = request.model_copy(deep=True)
         ctx = build_context(request)
         trace = Trace(dropped_inactive=ctx.dropped_inactive)
 
@@ -105,8 +96,8 @@ class Orchestrator:
         logger.info("[DONE] intent=%s->%s source=%s router=%s generator=%s guard=%s llm_calls=%d %dms",
                     plan.detailed_intent.value, response.intent.value, trace.router_source, trace.router_model,
                     trace.generator_model, trace.guard_violations or "ok", trace.llm_calls, trace.latency_ms)
-        self.last_plan = plan  # exposed for tests / debugging only
-        return response, trace
+        return ExecutionResult(customer_id=request.customer.id, context=ctx,
+                               routing=rr, plan=plan, response=response, trace=trace)
 
     # ------------------------------------------------------------------ stage 1: hard rules (no LLM)
 
@@ -155,7 +146,8 @@ class Orchestrator:
                 raise AIUnavailable(exc.reason) from exc
             rr, _ = await self.providers.fallback_router.route(ctx)
             trace.router_source, trace.fallback_reason = "rules", exc.reason
-        rr = enforce_router_rules(rr, ctx)
+        # Providers may reuse a result object. Sanitization belongs to this call.
+        rr = enforce_router_rules(rr.model_copy(deep=True), ctx)
 
         confirming = declined = False
         if rr.confirmation is not None:   # only survives enforce_router_rules right after a confirmation question
