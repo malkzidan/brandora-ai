@@ -37,7 +37,8 @@ def build_dev_router(orchestrator: Orchestrator, require_token: Callable) -> API
     @router.post("/respond-with-mock")
     async def respond_with_mock(body: DevRequest) -> dict[str, Any]:
         payload = mock_data.build_request(body.customerWaId, body.message)
-        response, trace = await orchestrator.respond(AIRespondRequest.model_validate(payload))
+        execution = await orchestrator.respond(AIRespondRequest.model_validate(payload))
+        response, trace = execution.response, execution.trace
         out: dict[str, Any] = {"response": response.model_dump(mode="json"), "trace": trace.__dict__}
         if body.includeRequest:
             out["request"] = payload

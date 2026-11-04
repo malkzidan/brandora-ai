@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from dotenv import load_dotenv
 
@@ -41,7 +41,15 @@ def _models(name: str, default: tuple[str, ...]) -> tuple[str, ...]:
 @dataclass(frozen=True)
 class Settings:
     ai_provider: str = "gemini"                  # "gemini" (production) | "rules" (deterministic, offline, no key)
-    gemini_api_key: str | None = None
+    gemini_api_key: str | None = field(default=None, repr=False)
+    groq_api_key: str | None = field(default=None, repr=False)
+    groq_models: tuple[str, ...] = ("openai/gpt-oss-120b",)
+    openrouter_api_key: str | None = field(default=None, repr=False)
+    openrouter_models: tuple[str, ...] = ("google/gemma-4-31b-it:free",)
+    chat_provider_order: tuple[str, ...] = ("groq", "openrouter")
+    chat_provider_timeout_seconds: float = 3.0
+    chat_total_timeout_seconds: float = 8.0
+    chat_circuit_seconds: float = 30.0
     router_models: tuple[str, ...] = DEFAULT_ROUTER_MODELS
     generator_models: tuple[str, ...] = DEFAULT_GENERATOR_MODELS
     generator_enabled: bool = True               # false = Router only, replies come straight from the verified templates
@@ -52,7 +60,19 @@ class Settings:
     gemini_max_retries: int = 2                  # per model, for transient (network/timeout/bad-JSON) errors
     gemini_retry_delay_seconds: float = 3.0
     gemini_cooldown_seconds: float = 60.0        # a model that returned 503/429 is skipped for this long
-    ai_service_token: str | None = None          # shared secret the backend sends in X-Internal-Token
+    ai_service_token: str | None = field(default=None, repr=False)  # Backend -> AI only
+    app_env: str = "local"
+    products_integration_enabled: bool = False
+    ai_integration_enabled: bool = False
+    supplied_context_compat_enabled: bool = False
+    legacy_api_enabled: bool = True
+    trusted_proxy_cidrs: tuple[str, ...] = ()
+    integration_timeout_seconds: float = 25.0
+    stock_quantity_disclosure_businesses: tuple[str, ...] = ()
+    backend_base_url: str | None = None
+    backend_service_token: str | None = field(default=None, repr=False)  # AI -> Backend only
+    backend_context_public_key: str | None = field(default=None, repr=False)
+    backend_timeout_seconds: float = 5.0
     enable_dev_endpoints: bool = False           # /v1/dev/* (mock data playground). Never enable in production.
     fallback_to_rules: bool = True               # Router failed on every model: True = rule router, False = HTTP 503
     min_confidence: float = 0.4
@@ -63,6 +83,12 @@ class Settings:
         return self.ai_provider == "gemini"
 
     def validate(self) -> "Settings":
+        if self.app_env not in {"local","staging","production"}:
+            raise ConfigError("APP_ENV must be local, staging or production")
+        if self.app_env != "local" and (not self.ai_service_token or len(self.ai_service_token) < 32
+                or not self.ai_service_token.isascii() or not self.ai_service_token.isprintable()
+                or self.ai_service_token.strip() != self.ai_service_token or self.enable_dev_endpoints):
+            raise ConfigError("Staging/production requires a strong AI_SERVICE_TOKEN and disabled dev endpoints")
         if self.ai_provider not in {"gemini", "rules"}:
             raise ConfigError(f"AI_PROVIDER must be 'gemini' or 'rules' (got {self.ai_provider!r})")
         if self.ai_provider == "gemini" and not self.gemini_api_key:
@@ -74,6 +100,14 @@ def load_settings() -> Settings:
     return Settings(
         ai_provider=(os.getenv("AI_PROVIDER") or "gemini").strip().lower(),
         gemini_api_key=(os.getenv("GEMINI_API_KEY") or "").strip() or None,
+        groq_api_key=(os.getenv("GROQ_API_KEY") or "").strip() or None,
+        groq_models=_models("GROQ_MODELS", ("openai/gpt-oss-120b",)),
+        openrouter_api_key=(os.getenv("OPENROUTER_API_KEY") or "").strip() or None,
+        openrouter_models=_models("OPENROUTER_MODELS", ("google/gemma-4-31b-it:free",)),
+        chat_provider_order=_models("CHAT_PROVIDER_ORDER", ("groq", "openrouter")),
+        chat_provider_timeout_seconds=_num("CHAT_PROVIDER_TIMEOUT_SECONDS", 3.0),
+        chat_total_timeout_seconds=_num("CHAT_TOTAL_TIMEOUT_SECONDS", 8.0),
+        chat_circuit_seconds=_num("CHAT_CIRCUIT_SECONDS", 30.0),
         router_models=_models("ROUTER_MODELS", DEFAULT_ROUTER_MODELS),
         generator_models=_models("GENERATOR_MODELS", DEFAULT_GENERATOR_MODELS),
         generator_enabled=_bool("GENERATOR_ENABLED", True),
@@ -85,6 +119,18 @@ def load_settings() -> Settings:
         gemini_retry_delay_seconds=_num("GEMINI_RETRY_DELAY_SECONDS", 3.0),
         gemini_cooldown_seconds=_num("GEMINI_COOLDOWN_SECONDS", 60.0),
         ai_service_token=(os.getenv("AI_SERVICE_TOKEN") or "").strip() or None,
+        app_env=(os.getenv("APP_ENV") or "local").strip().lower(),
+        products_integration_enabled=_bool("PRODUCTS_INTEGRATION_ENABLED", False),
+        ai_integration_enabled=_bool("AI_INTEGRATION_ENABLED", False),
+        supplied_context_compat_enabled=_bool("SUPPLIED_CONTEXT_COMPAT_ENABLED", False),
+        legacy_api_enabled=_bool("LEGACY_API_ENABLED", True),
+        trusted_proxy_cidrs=_models("TRUSTED_PROXY_CIDRS", ()),
+        integration_timeout_seconds=_num("INTEGRATION_TIMEOUT_SECONDS", 25.0),
+        stock_quantity_disclosure_businesses=_models("STOCK_QUANTITY_DISCLOSURE_BUSINESSES", ()),
+        backend_base_url=(os.getenv("BACKEND_BASE_URL") or "").strip() or None,
+        backend_service_token=(os.getenv("BACKEND_SERVICE_TOKEN") or "").strip() or None,
+        backend_context_public_key=(os.getenv("BACKEND_CONTEXT_PUBLIC_KEY") or "").replace("\\n","\n").strip() or None,
+        backend_timeout_seconds=_num("BACKEND_TIMEOUT_SECONDS", 5.0),
         enable_dev_endpoints=_bool("ENABLE_DEV_ENDPOINTS", False),
         fallback_to_rules=_bool("AI_FALLBACK_TO_RULES", True),
         min_confidence=_num("MIN_CONFIDENCE", 0.4),

@@ -1,5 +1,10 @@
 # Brandora AI Service — Integration Guide & Status Report
 
+> Historical **v1** guide. Current standalone read-only chatbot instructions are
+> in [LOCAL_CHATBOT.md](LOCAL_CHATBOT.md); verified Backend main and missing
+> contracts are in [BACKEND_HANDOFF.md](BACKEND_HANDOFF.md). Legacy order-candidate
+> examples below do not enable Orders in the new conversational application.
+
 | | |
 |---|---|
 | **Service version** | v3.1 (431 automated tests passing) |
